@@ -1,4 +1,4 @@
-# NexaGrid v2.2
+# NexaGrid v1.0
 
 Librairie JavaScript de tableau de données professionnel — inspirée de AG Grid et Tabulator.  
 Zéro dépendance obligatoire · Bootstrap 5 injecté automatiquement · Chart.js optionnel.
