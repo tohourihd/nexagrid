@@ -1,7 +1,9 @@
 # NexaGrid v1.0
 
 Librairie JavaScript de tableau de données professionnel — inspirée de AG Grid et Tabulator.  
-Zéro dépendance obligatoire · Bootstrap 5 injecté automatiquement · Chart.js optionnel.
+**Dual-panel frozen scroll · ApexCharts · Pagination AG Grid · Tree styles · Formules · Filtre server-side**
+
+Zéro dépendance obligatoire · Bootstrap 5 + ApexCharts injectés automatiquement.
 
 ---
 
@@ -17,13 +19,18 @@ Zéro dépendance obligatoire · Bootstrap 5 injecté automatiquement · Chart.j
 8. [Tree / données arborescentes](#tree--données-arborescentes)
 9. [Groupement](#groupement)
 10. [Layout system](#layout-system)
-11. [Pagination & Infinite scroll](#pagination--infinite-scroll)
-12. [Vues](#vues)
-13. [Graphiques](#graphiques)
-14. [Fonctionnalités utilisateur](#fonctionnalités-utilisateur)
-15. [API publique complète](#api-publique-complète)
-16. [Événements](#événements)
-17. [Thèmes](#thèmes)
+11. [Pagination AG Grid](#pagination-ag-grid)
+12. [Infinite scroll](#infinite-scroll)
+13. [Graphiques ApexCharts](#graphiques-apexcharts)
+14. [Édition inline + validation](#édition-inline--validation)
+15. [Fonctionnalités utilisateur](#fonctionnalités-utilisateur)
+16. [Désactiver des éléments UI](#désactiver-des-éléments-ui)
+17. [Sélection en plage](#sélection-en-plage)
+18. [Vues](#vues)
+19. [API publique complète](#api-publique-complète)
+20. [Événements](#événements)
+21. [Thèmes](#thèmes)
+22. [Intégration dans un template](#intégration-dans-un-template)
 
 ---
 
@@ -40,16 +47,14 @@ Dans votre HTML :
 
 ```html
 <!-- 1. CSS NexaGrid -->
-<link rel="stylesheet" href="nexagrid.css">
+<link rel="stylesheet" href="nexagrid.css" />
 
-<!-- 2. Chart.js (optionnel — pour les graphiques) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-
-<!-- 3. NexaGrid JS -->
+<!-- 2. NexaGrid JS -->
 <script src="nexagrid.js"></script>
 ```
 
-> Bootstrap 5 est **injecté automatiquement** par NexaGrid (CDN). Pas besoin de l'inclure manuellement.
+> **Bootstrap 5** et **ApexCharts** sont injectés automatiquement par NexaGrid (CDN).  
+> Pas besoin de les inclure manuellement.
 
 ---
 
@@ -62,10 +67,10 @@ Dans votre HTML :
 
 ```js
 // Style Tabulator
-const grid = new NexaGrid('#myGrid', options);
+const grid = new NexaGrid("#myGrid", options);
 
 // Style AG Grid
-const grid = NexaGrid.createGrid(document.getElementById('myGrid'), options);
+const grid = NexaGrid.createGrid(document.getElementById("myGrid"), options);
 ```
 
 ---
@@ -73,68 +78,84 @@ const grid = NexaGrid.createGrid(document.getElementById('myGrid'), options);
 ## Options complètes
 
 ```js
-const grid = new NexaGrid('#myGrid', {
-
+const grid = new NexaGrid("#myGrid", {
   // ── Général
-  title:   'Mon tableau',   // titre affiché dans la toolbar
-  height:  null,            // null = votre CSS contrôle la taille
-                            // ou '500px' pour forcer une hauteur
+  title: "Mon tableau", // titre affiché dans la toolbar
+  height: null, // null = votre CSS contrôle la taille
+  // ou '500px' pour forcer une hauteur
 
   // ── Colonnes & données
-  columns:       [],        // définitions de colonnes (voir §Colonnes)
-  data:          null,      // tableau initial de données
-  treeChildField:'children',// nom de la propriété enfants pour le tree
+  columns: [], // définitions de colonnes (voir §Colonnes)
+  data: null, // tableau initial de données
+  treeChildField: "children", // nom de la propriété enfants pour le tree
+  treeStyle: "default", // 'default' | 'lines' | 'folder'
 
   // ── Fonctionnalités
-  showFilters:  true,       // ligne de filtres visible au départ
-  showToolbar:  true,       // barre d'outils
-  showStatus:   true,       // barre de statut
-  showAggRow:   true,       // ligne TOTAL en bas
-  editable:     true,       // édition inline globale (double-clic)
-  rowDrag:      true,       // poignée de réordonnancement
-  rowPin:       true,       // épinglage de lignes
-  multiSort:    true,       // tri multi-colonnes (Shift+clic)
-  cfEnabled:    false,      // formatage conditionnel au départ
+  showFilters: true, // ligne de filtres visible au départ
+  showToolbar: true, // barre d'outils
+  showStatus: true, // barre de statut
+  showAggRow: true, // ligne TOTAL en bas
+  editable: true, // édition inline globale (double-clic)
+  rowDrag: true, // poignée de réordonnancement des lignes
+  rowPin: true, // épinglage de lignes
+  multiSort: true, // tri multi-colonnes (Shift+clic)
+  cfEnabled: false, // formatage conditionnel au départ
 
   // ── Groupement
-  groupBy:      null,       // champ de groupement initial
+  groupBy: null, // champ de groupement initial
 
   // ── Layout
-  layout: 'fitDataFill',    // voir §Layout system
+  layout: "fitDataFill", // voir §Layout system
 
-  // ── Pagination & Infinite scroll
-  paginationPosition: 'bottom', // 'top' | 'bottom' | 'both' | false
-  totalCount:   0,              // total côté serveur (0 = auto)
-  onLoadMore:   null,           // callback infinite scroll
+  // ── Formules
+  formulaMode: "lazy", // 'lazy' = calcul à chaque rendu (défaut)
+  // 'eager' = calcul unique au chargement des données
+
+  // ── Filtre server-side
+  serverSideFilter: false, // true = onFilterChanged déclenché au lieu du filtre client
+
+  // ── Pagination AG Grid
+  paginationPosition: "bottom", // 'top' | 'bottom' | 'both' | false
+  pageSize: 25, // lignes par page; sélecteur: 10/25/50/100/250/500/Tout
+
+  // ── Infinite scroll
+  totalCount: 0, // total côté serveur (0 = auto)
+  onLoadMore: null, // callback infinite scroll (voir §Infinite scroll)
+
+  // ── Personnalisation UI
+  toolbarHidden: [], // boutons toolbar à masquer (voir §Désactiver des éléments UI)
+  contextMenuHidden: [], // items du menu clic droit à masquer
 
   // ── Loader de démarrage
   loader: {
-    title:       'MON APP',
-    subtitle:    'Chargement…',
-    steps:       ['Connexion…', 'Données…', 'Prêt !'],
-    duration:    2000,          // durée totale en ms
-    accentColor: '#1e6dc5',
+    title: "MON APP",
+    subtitle: "Chargement…",
+    steps: ["Connexion…", "Données…", "Prêt !"],
+    duration: 2000, // durée totale en ms
+    accentColor: "#1e6dc5",
   },
   // Pour désactiver le loader : loader: false
 
-  // ── Graphiques
+  // ── Graphiques ApexCharts
   graph: {
-    kpis:     [],     // KPIs affichés en haut des graphiques
-    sections: [],     // sections personnalisées (voir §Graphiques)
+    kpis: [], // KPIs affichés en haut (voir §Graphiques)
+    sections: [], // sections personnalisées
   },
 
   // ── Événements (voir §Événements)
-  onRowClick:         null,
-  onRowDblClick:      null,
-  onCellClick:        null,
+  onRowClick: null,
+  onRowDblClick: null,
+  onCellClick: null,
   onCellValueChanged: null,
   onSelectionChanged: null,
-  onFilterChanged:    null,
-  onSortChanged:      null,
-  onRowMoved:         null,
-  onRowPinned:        null,
-  onDataLoaded:       null,
-  onReady:            null,
+  onFilterChanged: null, // reçoit (filters, grid) — 2e arg = instance
+  onSortChanged: null,
+  onRowMoved: null,
+  onRowPinned: null,
+  onDataLoaded: null,
+  onReady: null,
+  onLoadMore: null,
+  onPageSizeChanged: null, // reçoit (pageSize, grid)
 });
 ```
 
@@ -146,73 +167,77 @@ const grid = new NexaGrid('#myGrid', {
 columns: [
   {
     // ── Identification
-    field:       'solde',           // nom de la propriété dans vos données (obligatoire)
-    id:          'solde',           // alias de field
+    field: "solde", // nom de la propriété dans vos données (obligatoire)
+    id: "solde", // alias de field
 
     // ── Affichage
-    headerName:  'Solde',           // texte de l'en-tête
-    title:       'Solde',           // alias headerName
-    group:       'Montants',        // groupe d'en-tête (2 niveaux)
-    width:       120,               // largeur en px
-    minWidth:    40,                // largeur minimale au redimensionnement
+    headerName: "Solde", // texte de l'en-tête (alias : title, label)
+    group: "Montants", // groupe d'en-tête (2 niveaux visuels)
+    width: 120, // largeur en px
+    minWidth: 40, // largeur minimale au redimensionnement
 
     // ── Type & format
-    type:        'num',             // voir §Types de colonnes
-    decimals:    2,                 // décimales pour type:'num'
-    badgeColors: {                  // couleurs pour type:'badge'
-      'Validé': 'green',
-      'Rejeté': 'red',
+    type: "num", // voir §Types de colonnes
+    decimals: 2, // décimales pour type:'num'
+    badgeColors: {
+      // couleurs pour type:'badge'
+      Validé: "green",
+      Rejeté: "red",
+      "En cours": "blue",
+      Brouillon: "gray",
     },
 
     // ── Comportement
-    frozen:      false,             // colonne gelée à gauche
-    pinned:      'left',            // alias frozen (style AG Grid)
-    visible:     true,              // visible au départ
-    hide:        false,             // alias !visible
-    editable:    true,              // édition inline double-clic
-    sortable:    true,              // tri au clic sur l'en-tête
-    noSort:      false,             // alias !sortable
+    frozen: false, // colonne gelée à gauche (alias : pinned:'left')
+    visible: true, // visible au départ (alias : hide:false)
+    editable: true, // édition inline double-clic
+    sortable: true, // tri au clic sur l'en-tête (alias : noSort:false)
 
     // ── Filtre
-    filter:      'num',             // voir §Filtres typés
-    noFilter:    false,             // désactiver le filtre
+    filter: "num", // voir §Filtres typés (false pour désactiver)
 
     // ── Agrégation (ligne TOTAL)
-    aggFunc:     'sum',             // 'sum' | 'avg' | 'min' | 'max' | 'count'
-                                    // auto: 'sum' si type:'num'
+    aggFunc: "sum", // 'sum' | 'avg' | 'min' | 'max' | 'count'
+    // auto : 'sum' si type:'num'
 
     // ── Colonne calculée
-    formula:     (row) => row.a * row.b,  // voir §Colonnes calculées
+    formula: (row) => row.debit - row.credit, // voir §Colonnes calculées
 
     // ── Formatteur personnalisé
-    formatter:   ({ value, row, col }) => {
+    formatter: ({ value, row, col }) => {
       // Retourne une string ou un HTMLElement
-      return value > 0 ? `+${value}` : String(value);
+      return value > 0 ? `+${value} €` : `${value} €`;
     },
 
     // ── Tooltip
-    tooltip:      true,             // tooltip au survol de la cellule
-    tooltipField: 'note',           // utiliser un autre champ pour le tooltip
+    tooltip: true, // tooltip au survol (valeur de la cellule)
+    tooltipField: "note", // ou utiliser un autre champ pour le texte
 
     // ── Formatage conditionnel
-    cf:           true,             // participe au CF (vert/orange/rouge)
-  }
-]
+    cf: true, // participe au CF (vert/orange/rouge)
+
+    // ── Validation d'édition
+    validate: (value) => {
+      if (parseFloat(value) < 0) return "La valeur doit être positive";
+      return true; // true = valide
+    },
+  },
+];
 ```
 
 ---
 
 ## Types de colonnes
 
-| `type`       | Rendu                          | Filtre auto   |
-|--------------|-------------------------------|---------------|
-| `text`       | Texte brut                    | Texte contient |
-| `num`        | Nombre formaté, aligné droite, vert/rouge | Opérateur + number |
-| `date`       | Date (dd/mm/yyyy ou iso)      | Sélecteur date |
-| `badge`      | Badge coloré arrondi          | Select dropdown |
-| `boolean`    | ✓ ou —                        | Select dropdown |
-| `progress`   | Barre de progression + %      | Texte          |
-| `spark`      | Mini-graphique sparkline      | *(désactivé)*  |
+| `type`     | Rendu                                     | Filtre auto        |
+| ---------- | ----------------------------------------- | ------------------ |
+| `text`     | Texte brut                                | Texte contient     |
+| `num`      | Nombre formaté, aligné droite, vert/rouge | Opérateur + number |
+| `date`     | Date (dd/mm/yyyy ou iso)                  | Sélecteur date     |
+| `badge`    | Badge coloré arrondi                      | Select dropdown    |
+| `boolean`  | ✓ ou —                                    | Select dropdown    |
+| `progress` | Barre de progression + %                  | Texte              |
+| `spark`    | Mini-graphique sparkline                  | _(désactivé)_      |
 
 Aliases acceptés : `number`, `numeric`, `currency`, `float`, `int` → `num` · `datetime` → `date` · `bool` → `boolean` · `tag` → `badge` · `sparkline` → `spark`
 
@@ -220,28 +245,26 @@ Aliases acceptés : `number`, `numeric`, `currency`, `float`, `int` → `num` ·
 
 ## Filtres typés
 
-Le widget de filtre s'adapte automatiquement au type de la colonne.  
-Vous pouvez le forcer avec la propriété `filter:` :
+Le widget de filtre s'adapte automatiquement au type de la colonne.
 
 ```js
 // Filtre texte (défaut pour type:'text')
 { field:'entity', filter:'text' }
 
 // Filtre numérique : select opérateur (=, !=, >, >=, <, <=) + input number
-// (pas de texte possible dans le champ)
-{ field:'solde', type:'num' }          // auto
-{ field:'solde', filter:'number' }     // explicite
+{ field:'solde', type:'num' }           // auto
+{ field:'solde', filter:'number' }      // explicite
 
 // Filtre date : <input type="date"> natif
-{ field:'date', type:'date' }          // auto
-{ field:'date', filter:'date' }        // explicite
+{ field:'date', type:'date' }           // auto
+{ field:'date', filter:'date' }         // explicite
 
 // Filtre plage de dates : deux inputs "du → au"
 { field:'echeance', filter:'dateRange' }
 
 // Filtre select : dropdown des valeurs uniques
-{ field:'statut', type:'badge' }       // auto
-{ field:'ccy',    filter:'select' }    // forcer sur un type text
+{ field:'statut', type:'badge' }        // auto
+{ field:'ccy',    filter:'select' }     // forcer sur un type text
 
 // Désactiver le filtre sur une colonne
 { field:'spark',  filter: false }
@@ -251,21 +274,25 @@ Vous pouvez le forcer avec la propriété `filter:` :
 
 ```js
 // Filtre texte
-grid.setFilter('entity', 'CORP-FR');
+grid.setFilter("entity", "CORP-FR");
 
 // Filtre numérique avec opérateur
-grid.setFilter('solde', null, { type:'num', op:'<', value:-10000 });
+grid.setFilter("solde", null, { type: "num", op: "<", value: -10000 });
 
-// Filtre date
-grid.setFilter('date', null, { type:'date', value:'2024-03-15' });
+// Filtre date exacte
+grid.setFilter("date", null, { type: "date", value: "2024-03-15" });
 
 // Filtre plage de dates
-grid.setFilter('echeance', null, { type:'dateRange', from:'2024-01-01', to:'2024-06-30' });
+grid.setFilter("echeance", null, {
+  type: "dateRange",
+  from: "2024-01-01",
+  to: "2024-06-30",
+});
 
 // Filtre select
-grid.setFilter('statut', 'Validé', { type:'select', value:'Validé' });
+grid.setFilter("statut", "Validé", { type: "select", value: "Validé" });
 
-// Effacer un filtre
+// Effacer tous les filtres
 grid.clearFilters();
 
 // Lire les filtres actifs
@@ -273,69 +300,110 @@ const filters = grid.getFilters();
 // → { solde: { type:'num', op:'<', value:'-10000' }, ... }
 ```
 
+### Filtre server-side
+
+Quand `serverSideFilter: true`, NexaGrid ne filtre plus côté client.  
+À chaque changement de filtre, `onFilterChanged` est déclenché pour que vous fassiez l'appel API.
+
+```js
+const grid = new NexaGrid("#myGrid", {
+  serverSideFilter: true,
+
+  onFilterChanged: (filters, grid) => {
+    // filters = { statut: { type:'select', value:'Validé' }, ... }
+    // grid = instance NexaGrid
+
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([field, f]) => {
+      if (f.type === "num") params.set(field, `${f.op}${f.value}`);
+      else if (f.type === "select") params.set(field, f.value);
+      else params.set(field, f.value);
+    });
+
+    grid.showLoader("Filtrage…");
+    fetch(`/api/data?${params}`)
+      .then((r) => r.json())
+      .then((data) => {
+        grid.setData(data.rows);
+        grid.setTotalCount(data.total);
+        grid.hideLoader();
+      });
+  },
+});
+```
+
 ---
 
 ## Colonnes calculées
 
-Une colonne calculée reçoit `formula: (row) => valeur`. Elle est **recalculée à chaque rendu**, jamais stockée dans la donnée.
+Une colonne calculée reçoit `formula: (row) => valeur`. Elle n'est **jamais stockée** dans la donnée.
 
 ```js
 columns: [
-  { field:'debit',  type:'num', aggFunc:'sum' },
-  { field:'credit', type:'num', aggFunc:'sum' },
-  { field:'taux',   type:'num', decimals:4 },
+  { field: "debit", type: "num", aggFunc: "sum" },
+  { field: "credit", type: "num", aggFunc: "sum" },
+  { field: "taux", type: "num", decimals: 4 },
 
-  // Colonne calculée numérique
+  // ── Colonne numérique calculée
   {
-    field:      'solde_eur',
-    headerName: 'Solde EUR',
-    type:       'num',
-    decimals:   2,
-    aggFunc:    'sum',        // les formules participent aux totaux
-    editable:   false,
-    formula:    (row) => {
+    field: "solde_eur",
+    headerName: "Solde EUR",
+    type: "num",
+    decimals: 2,
+    aggFunc: "sum", // les formules participent aux totaux
+    editable: false,
+    formula: (row) => {
       const solde = parseFloat(row.solde) || 0;
-      const taux  = parseFloat(row.taux)  || 1;
-      return row.ccy === 'EUR' ? solde : Math.round(solde / taux * 100) / 100;
-    }
-  },
-
-  // Colonne calculée badge
-  {
-    field:      'risque',
-    headerName: 'Risque',
-    type:       'badge',
-    editable:   false,
-    formula:    (row) => {
-      const couv = parseFloat(row.couv) || 0;
-      if (couv > 70) return 'Faible';
-      if (couv > 35) return 'Moyen';
-      return 'Élevé';
+      const taux = parseFloat(row.taux) || 1;
+      return row.ccy === "EUR" ? solde : Math.round((solde / taux) * 100) / 100;
     },
-    badgeColors: { 'Faible':'green', 'Moyen':'orange', 'Élevé':'red' }
   },
 
-  // Colonne calculée texte
+  // ── Badge calculé
   {
-    field:      'label_complet',
-    headerName: 'Label',
-    type:       'text',
-    formula:    (row) => `${row.ref} — ${row.entity} (${row.ccy})`
+    field: "risque",
+    headerName: "Risque",
+    type: "badge",
+    editable: false,
+    formula: (row) => {
+      const couv = parseFloat(row.couv) || 0;
+      if (couv > 70) return "Faible";
+      if (couv > 35) return "Moyen";
+      return "Élevé";
+    },
+    badgeColors: { Faible: "green", Moyen: "orange", Élevé: "red" },
   },
 
-  // Jours restants avant échéance
+  // ── Texte calculé
   {
-    field:      'jours',
-    headerName: 'J. restants',
-    type:       'num',
-    decimals:   0,
-    formula:    (row) => {
+    field: "label_complet",
+    headerName: "Label",
+    type: "text",
+    formula: (row) => `${row.ref} — ${row.entity} (${row.ccy})`,
+  },
+
+  // ── Jours restants avant échéance
+  {
+    field: "jours",
+    headerName: "J. restants",
+    type: "num",
+    decimals: 0,
+    formula: (row) => {
       if (!row.echeance) return null;
-      const [d, m, y] = String(row.echeance).split('/');
+      const [d, m, y] = String(row.echeance).split("/");
       return Math.round((new Date(`${y}-${m}-${d}`) - Date.now()) / 86400000);
-    }
+    },
   },
-]
+];
+```
+
+**Mode eager** — calcul unique au chargement, plus performant sur gros volumes :
+
+```js
+const grid = new NexaGrid('#myGrid', {
+  formulaMode: 'eager',   // toutes les formules calculées une fois à setData()
+  columns: [...]
+});
 ```
 
 ---
@@ -347,27 +415,17 @@ Ajoutez une propriété `children` dans vos objets. NexaGrid détecte la hiérar
 ```js
 const data = [
   {
-    ref:    'GRP-EUR',
-    entity: 'Zone EUR',
-    solde:  750000,
-    ccy:    'EUR',
-
+    ref: 'GRP-EUR', entity: 'Zone EUR', solde: 750000, ccy: 'EUR',
     children: [
       {
-        ref:    'CORP-FR',
-        entity: 'CORP-FR',
-        solde:  500000,
-
+        ref: 'CORP-FR', entity: 'CORP-FR', solde: 500000,
         children: [
           { ref:'TRF-0001', entity:'CORP-FR', debit:200000, solde:-200000, statut:'Validé' },
           { ref:'TRF-0002', entity:'CORP-FR', credit:300000, solde:300000, statut:'En cours' },
         ]
       },
       {
-        ref:    'CORP-DE',
-        entity: 'CORP-DE',
-        solde:  250000,
-
+        ref: 'CORP-DE', entity: 'CORP-DE', solde: 250000,
         children: [
           { ref:'TRF-0003', entity:'CORP-DE', credit:250000, solde:250000, statut:'Validé' },
         ]
@@ -375,12 +433,8 @@ const data = [
     ]
   },
   {
-    ref:    'GRP-USD',
-    entity: 'Zone USD',
-    solde:  -150000,
-    ccy:    'USD',
+    ref: 'GRP-USD', entity: 'Zone USD', solde: -150000, ccy: 'USD',
     _expanded: false,   // replié par défaut au chargement
-
     children: [
       { ref:'TRF-0010', entity:'HQ-CH', debit:150000, solde:-150000, statut:'Validé' }
     ]
@@ -391,21 +445,43 @@ const grid = new NexaGrid('#myGrid', {
   columns: [...],
   data,
   treeChildField: 'children',  // défaut : 'children'
-                                // changez si votre propriété a un autre nom
+  treeStyle:      'default',   // voir tableau ci-dessous
 });
 ```
 
+### Styles visuels du tree
+
+| `treeStyle` | Rendu                                      |
+| ----------- | ------------------------------------------ |
+| `'default'` | Flèches ▾/▸ avec indentation en px         |
+| `'lines'`   | Style ASCII `├─ └─ │`                      |
+| `'folder'`  | Icônes 📂 (ouvert) 📁 (fermé) 📄 (feuille) |
+
+### CSS automatique des enfants
+
+NexaGrid applique automatiquement un style visuel distinct selon la profondeur :
+
+```
+Nœuds parents  → gras, bordure gauche bleue
+depth-1        → fond légèrement teinté #f5f8fd, bordure bleue
+depth-2        → bordure verte
+depth-3        → bordure orange
+depth-4+       → bordure violette
+Feuilles       → fond clair #f9fbff, texte atténué
+```
+
 **Comportement :**
+
 - `▾` / `▸` — plier / déplier au clic
-- Indentation automatique : 14 px par niveau de profondeur
-- Nœuds feuilles (sans `children`) → indicateur `·`
+- Indentation : 14 px par niveau de profondeur
 - Tri et filtres s'appliquent sur les lignes visibles
 - Profondeur illimitée
 
 **État initial :**
+
 ```js
-{ ref:'GRP-USD', _expanded: false, children:[...] }  // replié
-{ ref:'GRP-EUR', _expanded: true,  children:[...] }  // déplié (défaut)
+{ _expanded: false, children:[...] }  // replié au chargement
+{ _expanded: true,  children:[...] }  // déplié (défaut si non spécifié)
 ```
 
 ---
@@ -415,9 +491,8 @@ const grid = new NexaGrid('#myGrid', {
 ```js
 // À l'instanciation
 const grid = new NexaGrid('#myGrid', {
-  groupBy: 'ccy',   // champ de groupement au démarrage
+  groupBy: 'ccy',
   columns: [
-    // Les colonnes avec aggFunc affichent leurs sous-totaux dans le groupe
     { field:'solde', type:'num', aggFunc:'sum', decimals:2 },
     { field:'debit', type:'num', aggFunc:'sum', decimals:2 },
   ],
@@ -429,58 +504,71 @@ grid.setGroupBy('ccy');     // groupe par devise
 grid.setGroupBy('statut');  // groupe par statut
 grid.setGroupBy('entity');  // groupe par entité
 grid.clearGroupBy();        // désactiver le groupement
-
-// Via le bouton toolbar "⊞ Grouper"
-// → groupe automatiquement sur la première colonne text/badge visible
+grid.toggleGrouping();      // bouton toolbar ⊞ Grouper
 ```
 
-Chaque groupe affiche : **valeur du champ · nombre de lignes · sous-totaux** des colonnes `aggFunc:'sum'`.
+Chaque groupe affiche : **valeur · nombre de lignes · sous-totaux** des colonnes `aggFunc:'sum'`.
 
 ---
 
 ## Layout system
 
-Contrôle comment les colonnes remplissent la largeur disponible.
-
 ```js
-const grid = new NexaGrid('#myGrid', {
-  layout: 'fitDataFill',  // défaut
+const grid = new NexaGrid("#myGrid", {
+  layout: "fitDataFill", // défaut
 });
 
-// Changer dynamiquement
-grid.setLayout('fitColumns');
+grid.setLayout("fitColumns"); // changer dynamiquement
 ```
 
-| Valeur | Comportement |
-|--------|-------------|
-| `fitDataFill` | Colonnes s'adaptent au contenu, le tableau remplit la largeur *(défaut)* |
-| `fitData` | Colonnes s'adaptent au contenu, pas d'étirement |
-| `fitColumns` | Toutes les colonnes se partagent proportionnellement la largeur disponible |
-| `fitDataStretch` | Comme `fitDataFill` mais étire la dernière colonne libre |
+| Valeur           | Comportement                                                        |
+| ---------------- | ------------------------------------------------------------------- |
+| `fitDataFill`    | Colonnes adaptées au contenu, tableau remplit la largeur _(défaut)_ |
+| `fitData`        | Colonnes adaptées au contenu, pas d'étirement                       |
+| `fitColumns`     | Colonnes réparties proportionnellement dans la largeur disponible   |
+| `fitDataStretch` | Comme `fitDataFill` mais étire la dernière colonne libre            |
 
 ---
 
-## Pagination & Infinite scroll
+## Pagination AG Grid
 
-### Pagination simple
+La barre de pagination affiche les informations **à droite** avec des boutons de navigation style AG Grid.
+
+```
+  Lignes/page: [25▾]   « ‹  Page 1 / 40  ›  »   Lignes 1–25 sur 1 000
+```
 
 ```js
-const grid = new NexaGrid('#myGrid', {
-  paginationPosition: 'bottom',  // 'top' | 'bottom' | 'both' | false
-  totalCount: 1000,              // total côté serveur
-  data: premieres50Lignes,
+const grid = new NexaGrid("#myGrid", {
+  paginationPosition: "bottom", // 'top' | 'bottom' | 'both' | false
+  pageSize: 25, // valeur initiale du sélecteur
+  data: mesLignes,
 });
 ```
 
-La barre de pagination affiche `50 / 1 000 lignes` avec une barre de progression.
+**Sélecteur de taille de page** : 10 / 25 / 50 / 100 / 250 / 500 / Tout  
+Quand la taille change, `onPageSizeChanged(pageSize, grid)` est déclenché.
 
-### Infinite scroll
+**Navigation par API :**
 
 ```js
-const grid = new NexaGrid('#myGrid', {
-  paginationPosition: 'bottom',
-  totalCount: 1000,
-  data: premieres50Lignes,
+grid._goPage(0); // première page
+grid._goPage(grid._totalPages() - 1); // dernière page
+grid._goPage(4); // page 5 (index 0-based)
+grid._totalPages(); // nombre total de pages
+```
+
+---
+
+## Infinite scroll
+
+En mode infinite scroll, la barre affiche la progression au lieu des boutons nav.
+
+```js
+const grid = new NexaGrid("#myGrid", {
+  paginationPosition: "bottom",
+  totalCount: 1000, // total côté serveur
+  data: premieres50Lignes, // chargement initial
 
   onLoadMore: (info, grid) => {
     // Déclenché quand l'utilisateur atteint le bas des données chargées
@@ -488,166 +576,207 @@ const grid = new NexaGrid('#myGrid', {
     // info.totalCount  → total serveur
     // info.page        → numéro de page approximatif
 
-    // 1. Afficher un message pendant le chargement
-    grid.setLoadMoreMessage('⏳ Chargement…');
+    grid.setLoadMoreMessage("⏳ Chargement de la page suivante…");
 
-    // 2. Appel API
     fetch(`/api/data?offset=${info.loadedCount}&limit=50`)
-      .then(r => r.json())
-      .then(newRows => {
-        // 3. Ajouter les lignes (déverrouille aussi le scroll)
+      .then((r) => r.json())
+      .then((newRows) => {
+        // appendData() ajoute les lignes ET déverrouille le scroll
         grid.appendData(newRows);
 
-        // 4. Mettre à jour le message
-        const total = info.loadedCount + newRows.length;
-        if (total >= info.totalCount) {
-          grid.setLoadMoreMessage('✓ Toutes les données sont chargées');
+        const loaded = info.loadedCount + newRows.length;
+        if (loaded >= info.totalCount) {
+          grid.setLoadMoreMessage(
+            `✓ Toutes les ${info.totalCount} lignes chargées`,
+          );
         } else {
-          grid.setLoadMoreMessage(`${total} / ${info.totalCount} lignes`);
+          grid.setLoadMoreMessage(
+            `${loaded.toLocaleString("fr-FR")} / ${info.totalCount.toLocaleString("fr-FR")} lignes`,
+          );
         }
       })
       .catch(() => {
-        grid.setLoadMoreMessage('❌ Erreur de chargement');
-        grid.unlockLoadMore();  // permettre une nouvelle tentative
+        grid.setLoadMoreMessage("❌ Erreur de chargement");
+        grid.unlockLoadMore(); // permettre une nouvelle tentative
       });
   },
 });
 
-// Méthodes liées
-grid.setTotalCount(1000);         // mettre à jour le total serveur
-grid.setLoadMoreMessage('…');     // message dans la barre de pagination
-grid.unlockLoadMore();            // déverrouiller le scroll (si pas via appendData)
+// API liée
+grid.setTotalCount(1000);
+grid.setLoadMoreMessage("…");
+grid.unlockLoadMore();
+grid.appendData(nouvelleLignes); // ajoute + déverrouille
 ```
 
 ---
 
-## Vues
+## Graphiques ApexCharts
 
-Une vue est un snapshot de l'état complet : filtres, tris, colonnes visibles/largeurs, groupement, formatage conditionnel.
+NexaGrid utilise **ApexCharts** (injecté automatiquement). Les graphiques s'ouvrent sur les lignes sélectionnées.
+
+### Bouton 📊 Graphes dans la toolbar
+
+Cliquer **📊 Graphes** ouvre une modal de configuration avec :
+
+- **Axe X** — radio parmi les colonnes `text` / `badge` / `date`
+- **Axe Y** — cases à cocher parmi les colonnes numériques (**nombre illimité de séries**)
+- **Type de graphique** — Bar / Ligne / Aire / Donut / Pie
 
 ```js
-// Sauvegarder la vue courante
-grid.saveView('Ma vue Q4');
-
-// Charger une vue
-grid.loadView('Ma vue Q4');
-
-// Lister les vues
-const noms = grid.getViews();  // ['Ma vue Q4', 'Validés', ...]
-
-// Ouvrir la modal de gestion des vues
-grid.openViewsModal();  // (idem que le bouton ◈ Vues)
-
-// Créer des vues programmatiquement dans onReady
-onReady: (grid) => {
-  // Configurer l'état...
-  grid.setSort('solde', 'desc');
-  grid._cfEnabled = true;
-  // ...puis sauvegarder
-  grid.saveView('Solde décroissant + CF');
-
-  // Remettre à zéro
-  grid.clearAll();
-
-  // Pré-charger une vue au démarrage
-  grid.loadView('Solde décroissant + CF');
-}
+// Ouvrir avec config prédéfinie
+grid._chartConfig = {
+  xField: "entity", // champ en abscisse
+  yFields: ["debit", "credit", "solde"], // champs en ordonnée (illimité)
+  chartType: "bar", // 'bar'|'line'|'area'|'donut'|'pie'
+};
+grid.openChart();
 ```
-
-**Ce que mémorise une vue :**
-- Filtres actifs (type, valeur, opérateur)
-- Tris (champ, direction, priorité)
-- Groupement (activé, champ)
-- Formatage conditionnel (activé/désactivé)
-- État de chaque colonne (visible, largeur, gelée)
-
----
-
-## Graphiques
-
-Les graphiques s'ouvrent sur les **lignes sélectionnées**. Sélectionnez des lignes (Ctrl+clic) puis `grid.openChart()` ou clic droit → Graphiques.
 
 ### Configuration des KPIs
 
 ```js
 graph: {
   kpis: [
-    { label:'Total Débit',  field:'debit',  fn:'sum' },
-    { label:'Total Crédit', field:'credit', fn:'sum' },
-    { label:'Solde Net',    field:'solde',  fn:'sum' },
-    { label:'Couv. Moy.',   field:'couv',   fn:'avg', suffix:'%' },
-    { label:'Nb opérations', field:'solde', fn:'count' },
-    { label:'Débit max',    field:'debit',  fn:'max' },
+    { label:'Total Débit',   field:'debit',  fn:'sum' },
+    { label:'Total Crédit',  field:'credit', fn:'sum' },
+    { label:'Solde Net',     field:'solde',  fn:'sum' },
+    { label:'Couverture',    field:'couv',   fn:'avg', suffix:'%' },
+    { label:'Nb opérations', field:'solde',  fn:'count' },
+    { label:'Max débit',     field:'debit',  fn:'max' },
   ],
   // fn: 'sum' | 'avg' | 'min' | 'max' | 'count'
 }
 ```
 
-### Sections auto-générées
+### Sections auto-générées avec configurateur d'axes
 
 Sans `sections:`, NexaGrid génère automatiquement :
-- **Vue d'ensemble** — bar chart des colonnes numériques + line chart
-- **Par catégorie** — doughnut + bar par chaque colonne badge/text
-- **Tableau** — tableau des lignes sélectionnées
+
+- **Vue d'ensemble** — toutes les colonnes Y sélectionnées en séries
+- **Par catégorie** — donut + bar par chaque colonne badge/text
+- **Tableau** — données brutes des lignes sélectionnées
+
+Chaque section auto comporte un **cadre ⚙ Configurer les axes** collapsible en bas :
+
+```
+┌─────────────────────────────────────────────────────┐
+│ ⚙ Configurer les axes                            ▾  │
+├──────────────────────┬──────────────────────────────┤
+│ 📐 Axe X             │ 📈 Axe Y                     │
+│ ○ Référence          │ ☑ Débit                      │
+│ ● Entité             │ ☑ Crédit                     │
+│ ○ Banque             │ ☑ Solde EUR                  │
+│                      │ ☐ Taux FX                    │
+└──────────────────────┴──────────────────────────────┘
+```
+
+Le graphique se met à jour **instantanément** à chaque changement.  
+Le graphique est toujours positionné **au-dessus** du configurateur.
 
 ### Sections personnalisées
+
+Les sections reçoivent `(panel, rows, helpers)` où `helpers` expose les utilitaires internes :
 
 ```js
 graph: {
   kpis: [...],
-
   sections: [
-    // ─── Chaque section = un onglet dans la modal ─────────
     {
       title: 'Évolution',
       icon:  '📈',
-      // build(panel, rows) :
-      //   panel → div dans lequel vous injectez votre contenu
-      //   rows  → lignes SÉLECTIONNÉES dans la grille
-      build: (panel, rows) => {
-        const labels = rows.map(r => r.date);
+      // panel   → div dans lequel injecter le contenu
+      // rows    → lignes SÉLECTIONNÉES dans la grille
+      // helpers → { mkApex, mkCard, mkFieldSelector, PAL, self }
+      build: (panel, rows, { mkApex, mkCard }) => {
+        const labels = rows.map(r => r.date || r.ref);
         const data   = rows.map(r => parseFloat(r.solde) || 0);
 
-        const canvas = document.createElement('canvas');
-        canvas.style.height = '250px';
-        panel.appendChild(canvas);
-
-        new Chart(canvas, {
-          type: 'line',
-          data: {
-            labels,
-            datasets: [{
-              label:           'Solde',
-              data,
-              borderColor:     '#1e6dc5',
-              backgroundColor: 'rgba(30,109,197,0.08)',
-              tension:         0.3,
-              fill:            true,
-            }]
+        // mkCard(id, titre, types[], buildFn, colonnesTable?, lignesTable?)
+        const card = mkCard(
+          'chart_evolution',          // id unique du div ApexCharts
+          'Évolution du solde',       // titre de la card
+          ['line', 'area', 'bar'],    // types disponibles (switcher)
+          (id, type) => {             // appelé à chaque changement de type
+            mkApex(id, type, [{ name:'Solde', data }], labels);
           },
-          options: {
-            responsive:          true,
-            maintainAspectRatio: false,
-          }
-        });
+          ['Date / Ref', 'Solde'],    // en-têtes du tableau de données
+          rows.map(r => [r.date || r.ref, r.solde])
+        );
+        panel.appendChild(card);
+
+        // Rendu initial du graphique
+        setTimeout(() => mkApex('chart_evolution', 'line', [{ name:'Solde', data }], labels), 30);
       }
     },
 
-    // ─── Section HTML libre ──────────────────────────────
+    // ── Section avec deux graphiques côte à côte
+    {
+      title: 'Répartition',
+      icon:  '🥧',
+      build: (panel, rows, { mkApex, mkCard }) => {
+        const grid2 = document.createElement('div');
+        grid2.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:12px;';
+
+        // Donut par statut
+        const statuts = {};
+        rows.forEach(r => { statuts[r.statut] = (statuts[r.statut] || 0) + 1; });
+        const card1 = mkCard('ch_statut', 'Par statut', ['donut','pie','bar'],
+          (id, tp) => {
+            if (tp === 'bar') mkApex(id, 'bar', [{ name:'Nb', data:Object.values(statuts) }], Object.keys(statuts));
+            else              mkApex(id, tp, [{ data:Object.values(statuts) }], Object.keys(statuts));
+          }
+        );
+
+        // Bar par entité
+        const parEntite = {};
+        rows.forEach(r => { parEntite[r.entity] = (parEntite[r.entity] || 0) + (parseFloat(r.solde)||0); });
+        const card2 = mkCard('ch_entite', 'Solde par entité', ['bar','line'],
+          (id, tp) => mkApex(id, tp, [{ name:'Solde', data:Object.values(parEntite) }], Object.keys(parEntite))
+        );
+
+        grid2.appendChild(card1); grid2.appendChild(card2);
+        panel.appendChild(grid2);
+        setTimeout(() => {
+          mkApex('ch_statut', 'donut', [{ data:Object.values(statuts) }], Object.keys(statuts));
+          mkApex('ch_entite', 'bar', [{ name:'Solde', data:Object.values(parEntite) }], Object.keys(parEntite));
+        }, 30);
+      }
+    },
+
+    // ── Section HTML libre (pas de graphique)
     {
       title: 'Résumé',
       icon:  '📋',
       build: (panel, rows) => {
         const totalDebit  = rows.reduce((s,r) => s + (parseFloat(r.debit)  || 0), 0);
         const totalCredit = rows.reduce((s,r) => s + (parseFloat(r.credit) || 0), 0);
-        const fmt = n => n.toLocaleString('fr-FR') + ' €';
+        const fmt = n => n.toLocaleString('fr-FR', { minimumFractionDigits:2 }) + ' €';
 
         panel.innerHTML = `
-          <div style="padding:16px">
-            <p><strong>Lignes sélectionnées :</strong> ${rows.length}</p>
-            <p><strong>Total débit :</strong> ${fmt(totalDebit)}</p>
-            <p><strong>Total crédit :</strong> ${fmt(totalCredit)}</p>
-            <p><strong>Solde net :</strong> ${fmt(totalCredit - totalDebit)}</p>
+          <div style="padding:20px;font-size:13px;">
+            <h6 style="margin-bottom:12px;">${rows.length} lignes sélectionnées</h6>
+            <table style="width:100%;border-collapse:collapse;">
+              <tr style="background:#1c2e4a;color:#e8edf5;">
+                <th style="padding:8px 12px;text-align:left;">Indicateur</th>
+                <th style="padding:8px 12px;text-align:right;">Valeur</th>
+              </tr>
+              <tr>
+                <td style="padding:7px 12px;border-bottom:1px solid #eee;">Total Débit</td>
+                <td style="text-align:right;color:#c0392b;font-family:monospace;">${fmt(totalDebit)}</td>
+              </tr>
+              <tr>
+                <td style="padding:7px 12px;border-bottom:1px solid #eee;">Total Crédit</td>
+                <td style="text-align:right;color:#1a6e3d;font-family:monospace;">${fmt(totalCredit)}</td>
+              </tr>
+              <tr style="font-weight:700;background:#f0f4fa;">
+                <td style="padding:7px 12px;">Solde Net</td>
+                <td style="text-align:right;font-family:monospace;
+                    color:${totalCredit-totalDebit>=0?'#1a6e3d':'#c0392b'}">
+                  ${fmt(totalCredit - totalDebit)}
+                </td>
+              </tr>
+            </table>
           </div>`;
       }
     },
@@ -657,83 +786,233 @@ graph: {
 
 ---
 
+## Édition inline + validation
+
+Double-clic sur une cellule éditable → un **overlay se positionne exactement sur la cellule**.
+
+**Règles intégrées :**
+
+- Valeur vide ou identique à l'actuelle → **rien ne se passe**, pas de sauvegarde
+- Type `num` + valeur non numérique → **message d'erreur rouge sous la cellule**
+- Type `date` + format invalide → **message d'erreur rouge**
+- La cellule ne se ferme pas tant que la valeur est invalide
+
+**Validation personnalisée :**
+
+```js
+{
+  field:    'taux',
+  type:     'num',
+  validate: (value) => {
+    const n = parseFloat(value);
+    if (n <= 0)   return 'Le taux doit être supérieur à 0';
+    if (n > 100)  return 'Le taux ne peut dépasser 100';
+    return true;  // true = valide, on enregistre
+  }
+}
+```
+
+**Raccourcis :**
+
+- `Entrée` → valider et enregistrer
+- `Échap` → annuler sans enregistrer
+- Clic hors de la cellule → valider
+
+---
+
 ## Fonctionnalités utilisateur
 
 ### Copier-coller depuis Excel
 
-Automatique. Aucune configuration.
+Automatique. Aucune configuration nécessaire.
 
-1. Copiez un tableau dans Excel / Google Sheets / LibreOffice (`Ctrl+C`)
-2. Cliquez la cellule cible dans NexaGrid
+1. Sélectionnez et copiez dans Excel / Google Sheets / LibreOffice (`Ctrl+C`)
+2. Cliquez la **cellule cible** dans NexaGrid
 3. `Ctrl+V` — les données se collent en remplissant les cellules éditables à partir de la cellule cliquée
 
-Le format TSV (tab-separated) est reconnu automatiquement. Les cellules modifiées flashent en bleu.
+Le format TSV (tab-separated) est reconnu automatiquement.  
+Les cellules modifiées **flashent en bleu** pendant 650ms.
 
 ### Édition en masse (bulk edit)
 
-Sélectionnez des lignes (Ctrl+clic) → **clic droit → Édition en masse** → choisissez le champ et la valeur → Appliquer.
+Sélectionnez des lignes → **clic droit → Édition en masse** → choisissez le champ et la valeur → Appliquer.
+
+La modal s'adapte automatiquement au type du champ (`number` pour `num`, `date` picker pour `date`, texte sinon).
 
 ```js
-// API programmatique
-grid.bulkEdit('statut', 'Validé');           // sur les lignes sélectionnées
-grid.bulkEdit('statut', 'Archivé', false);   // sur toutes les lignes
+grid.bulkEdit("statut", "Validé"); // sur les lignes sélectionnées
+grid.bulkEdit("statut", "Archivé", false); // sur toutes les lignes
 ```
 
 ### Drag & drop des colonnes
 
-Glissez un en-tête de colonne vers la gauche ou la droite pour le repositionner. Les colonnes gelées ne peuvent pas être déplacées. Une indication `⠿` apparaît au survol.
+Glissez un en-tête de colonne non-gelée pour le repositionner.  
+Une indication `⠿` apparaît à gauche du label au survol.  
+Les colonnes gelées ne peuvent pas être déplacées par drag.
 
 ### Comparaison de lignes
 
-Sélectionnez 2 à 6 lignes (Ctrl+clic) → **clic droit → Comparer**. Une modal affiche un tableau croisé avec les différences surlignées en jaune.
+Sélectionnez 2 à 6 lignes → **clic droit → Comparer les lignes**.  
+Les valeurs différentes sont surlignées en jaune.  
+Checkbox "Seulement les différences" pour ne voir que les champs qui divergent.
 
 ```js
-// API
-grid.compareRows();  // ouvre la modal sur les lignes sélectionnées
+grid.compareRows(); // ouvre la modal sur les lignes sélectionnées
 ```
 
 ### Épinglage de lignes
 
-Cliquez 📌 sur une ligne pour l'épingler en haut du tableau. Elle reste visible même en filtrant ou triant.
+Cliquez 📌 sur une ligne pour l'épingler en haut du tableau.  
+Elle reste visible même lors du filtrage ou du tri.
 
 ### Menu contextuel (clic droit)
 
-Disponible sur toutes les lignes :
-- Fixer / Libérer la ligne
-- Voir le détail (expand panel)
-- Éditer la cellule
-- Édition en masse
-- Comparer les lignes
-- Afficher les graphiques
-- Copier (Ctrl+C)
-- Sélectionner tout
-- Trier croissant / décroissant
-- Fixer / Libérer la colonne
-- Masquer la colonne
-- Supprimer la ligne
+Disponible sur toutes les lignes (voir §Désactiver des éléments UI pour masquer des items) :
+
+**Ligne** · Fixer/Libérer · Voir le détail · Éditer la cellule  
+**Sélection** · Édition en masse · Comparer · Graphiques · Copier · Sélectionner tout  
+**Colonne** · Trier croissant · Trier décroissant · Fixer la colonne · Masquer  
+**Danger** · Supprimer la ligne
 
 ### Redimensionnement des colonnes
 
-Glissez le bord droit d'un en-tête de colonne pour la redimensionner.
+Glissez le bord droit d'un en-tête de colonne pour la redimensionner librement.
 
 ### Tri
 
 - **Clic** sur un en-tête : tri croissant / décroissant
-- **Shift+clic** : ajouter au tri multi-colonnes (priorité numérotée)
+- **Shift+clic** : ajouter au tri multi-colonnes (numéro de priorité affiché sur l'icône)
 
-### Sélection
+### Formatage conditionnel
 
-- **Clic** : sélection simple
-- **Ctrl+clic** : multi-sélection
-- **Shift+clic** : sélection en plage
-- **Checkbox** (colonne sel) : sélection individuelle
-- **Checkbox en-tête** : sélectionner / désélectionner tout
+Activez via le bouton **★ Format** dans la toolbar ou l'API :
 
-### Édition inline
+```js
+grid.toggleCF();
 
-Double-clic sur une cellule éditable (`editable: true`) pour l'éditer.  
-`Entrée` pour valider, `Échap` pour annuler.  
-Les cellules modifiées affichent un point orange (marqueur dirty).
+// Colonnes participantes : { cf: true }
+// Vert    si valeur > 100 000
+// Orange  si valeur entre 0 et 100 000
+// Rouge   si valeur < 0
+```
+
+---
+
+## Désactiver des éléments UI
+
+### Boutons de la toolbar
+
+```js
+new NexaGrid("#myGrid", {
+  toolbarHidden: ["group", "cf", "json", "reset"],
+});
+```
+
+| Valeur      | Élément masqué               |
+| ----------- | ---------------------------- |
+| `'filters'` | Bouton ⚡ Filtres            |
+| `'group'`   | Bouton ⊞ Grouper             |
+| `'cf'`      | Bouton ★ Format conditionnel |
+| `'columns'` | Bouton ▤ Colonnes            |
+| `'views'`   | Bouton ◈ Vues                |
+| `'chart'`   | Bouton 📊 Graphes            |
+| `'csv'`     | Bouton ⬇ CSV                 |
+| `'json'`    | Bouton ⬇ JSON                |
+| `'search'`  | Champ 🔍 Recherche           |
+| `'reset'`   | Bouton ↺ Réinit.             |
+
+### Items du menu contextuel (clic droit)
+
+```js
+new NexaGrid("#myGrid", {
+  contextMenuHidden: ["deleteRow", "compare", "bulkEdit", "freezeCol"],
+});
+```
+
+| Valeur        | Élément masqué           |
+| ------------- | ------------------------ |
+| `'pin'`       | Fixer / Libérer la ligne |
+| `'detail'`    | Voir le détail           |
+| `'edit'`      | Éditer la cellule        |
+| `'bulkEdit'`  | Édition en masse         |
+| `'compare'`   | Comparer les lignes      |
+| `'chart'`     | Graphiques               |
+| `'copy'`      | Copier                   |
+| `'selectAll'` | Sélectionner tout        |
+| `'sortAsc'`   | Trier croissant          |
+| `'sortDesc'`  | Trier décroissant        |
+| `'freezeCol'` | Fixer la colonne         |
+| `'hideCol'`   | Masquer la colonne       |
+| `'deleteRow'` | Supprimer la ligne       |
+
+Quand tous les items d'un groupe sont masqués, le label et le séparateur du groupe disparaissent automatiquement.
+
+---
+
+## Sélection en plage
+
+La sélection en plage fonctionne entre lignes **distantes**, entre pages différentes, même après scroll.
+
+| Geste                | Résultat                                                           |
+| -------------------- | ------------------------------------------------------------------ |
+| **Clic**             | Sélectionne uniquement cette ligne — devient la **nouvelle ancre** |
+| **Ctrl+clic**        | Sélection en plage de l'ancre jusqu'à cette ligne                  |
+| **Shift+clic**       | Idem — sélection en plage de l'ancre jusqu'à cette ligne           |
+| **Checkbox**         | Sélection/désélection individuelle (sans modifier l'ancre)         |
+| **Checkbox en-tête** | Sélectionner / désélectionner toutes les lignes visibles           |
+
+**Exemple :**
+
+```
+1. Clic sur ligne 1   → ancre = ligne 1, sélection = {1}
+2. Ctrl+clic ligne 5  → sélection = {1, 2, 3, 4, 5}
+3. Ctrl+clic ligne 10 → sélection = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+4. Clic sur ligne 3   → reset, ancre = ligne 3, sélection = {3}
+5. Ctrl+clic ligne 8  → sélection = {3, 4, 5, 6, 7, 8}
+```
+
+---
+
+## Vues
+
+Une vue est un snapshot de l'état complet : filtres, tris, colonnes visibles/largeurs, groupement, formatage conditionnel.
+
+```js
+grid.saveView("Ma vue Q4");
+grid.loadView("Ma vue Q4");
+const noms = grid.getViews(); // ['Ma vue Q4', 'Validés', 'H1 2024']
+grid.openViewsModal(); // bouton ◈ Vues
+
+// Créer des vues programmatiquement dans onReady
+onReady: (grid) => {
+  grid.setSort("solde", "desc");
+  grid._cfEnabled = true;
+  grid.saveView("📉 Solde décroissant + CF");
+
+  grid.clearSort();
+  grid._cfEnabled = false;
+  grid.setFilter("statut", "Validé", { type: "select", value: "Validé" });
+  grid.saveView("✅ Validés uniquement");
+
+  grid.clearFilters();
+  grid.setFilter("echeance", null, {
+    type: "dateRange",
+    from: "2024-01-01",
+    to: "2024-06-30",
+  });
+  grid.saveView("📅 Échéances H1 2024");
+
+  grid.clearAll(); // repartir d'un état propre
+};
+```
+
+**Ce que mémorise une vue :**
+
+- Filtres actifs (type, valeur, opérateur)
+- Tris (champ, direction, priorité)
+- Groupement (activé, champ)
+- Formatage conditionnel (activé/désactivé)
+- État de chaque colonne (visible, largeur, gelée)
 
 ---
 
@@ -742,196 +1021,159 @@ Les cellules modifiées affichent un point orange (marqueur dirty).
 ### Données
 
 ```js
-// Remplacer toutes les données (supporte le tree)
-grid.setData(data)
-
-// Ajouter des lignes à la fin (infinite scroll)
-grid.appendData(data)
-
-// Ajouter une ligne à une position optionnelle
-const row = grid.addRow(data, index?)
-
-// Supprimer des lignes
-grid.deleteRow(ngId)               // par ID interne
-grid.deleteRow([ngId1, ngId2])     // par tableau d'IDs
-grid.deleteRow(row => row.montant < 0)  // par prédicat
+grid.setData(data)                            // remplacer toutes les données (supporte le tree)
+grid.appendData(data)                         // ajouter à la fin (infinite scroll)
+const row = grid.addRow(data, index?)         // insérer une ligne
+grid.deleteRow(ngId)                          // par ID interne
+grid.deleteRow([ngId1, ngId2])               // par tableau d'IDs
+grid.deleteRow(row => row.montant < 0)       // par prédicat
 grid.deleteSelectedRows()
-
-// Mettre à jour une ligne
 grid.updateRow(ngId, { statut: 'Validé' })
-grid.updateRow(row => row.ref === 'TRF-001', { statut: 'Validé' })
-
-// Récupérer les données
-grid.getAllData()          // toutes les lignes (nettoyées)
-grid.getData()             // alias getAllData()
-grid.getFilteredData()     // après filtres + tris actifs
-grid.getSelectedRows()     // lignes sélectionnées
-grid.getDirtyRows()        // lignes modifiées (+ _dirtyFields)
-grid.getTotalCount()       // total (serverTotal || rows.length)
-
-// Valeur d'une cellule
+grid.updateRow(row => row.ref === 'X', data)
+grid.getAllData()                              // toutes les lignes (nettoyées)
+grid.getData()                                // alias getAllData()
+grid.getFilteredData()                        // après filtres + tris actifs
+grid.getSelectedRows()
+grid.getDirtyRows()                           // lignes modifiées (+ _dirtyFields)
+grid.getTotalCount()                          // serverTotal || rows.length
 grid.getCellValue(rowId, 'champ')
 grid.setCellValue(rowId, 'champ', valeur)
-
-// Nettoyer les marqueurs dirty
 grid.clearDirty()
 ```
 
 ### Sélection
 
 ```js
-grid.selectAll()
-grid.deselectAll()
-grid.selectRow(ngId)
-grid.deselectRow(ngId)
-grid.getSelectedRows()     // tableau des lignes sélectionnées
+grid.selectAll();
+grid.deselectAll();
+grid.selectRow(ngId);
+grid.deselectRow(ngId);
+grid.getSelectedRows();
 ```
 
 ### Filtres
 
 ```js
-grid.setFilter('champ', valeur)
-grid.setFilter('solde', null, { type:'num', op:'<', value:-10000 })
-grid.setFilter('ech',   null, { type:'dateRange', from:'2024-01-01', to:'2024-06-30' })
-grid.clearFilters()
-grid.getFilters()          // objet des filtres actifs
+grid.setFilter("champ", valeur);
+grid.setFilter("solde", null, { type: "num", op: "<", value: -10000 });
+grid.setFilter("ech", null, {
+  type: "dateRange",
+  from: "2024-01-01",
+  to: "2024-06-30",
+});
+grid.clearFilters();
+grid.getFilters(); // → { solde: { type, op, value }, ... }
 ```
 
 ### Tri
 
 ```js
-grid.setSort('champ', 'asc')      // tri simple (remplace les tris existants)
-grid.addSort('champ', 'desc')     // ajouter au multi-tri
-grid.clearSort()
-grid.getSort()                    // [{ field, dir }]
+grid.setSort("champ", "asc"); // tri simple
+grid.addSort("champ", "desc"); // ajouter au multi-tri
+grid.clearSort();
+grid.getSort(); // → [{ field:'solde', dir:'desc' }]
 ```
 
 ### Colonnes
 
 ```js
-grid.showColumn('champ')
-grid.hideColumn('champ')
-grid.setColumnWidth('champ', 150)
-grid.setColumnPinned('champ', 'left')  // geler à gauche
-grid.setColumnPinned('champ', false)   // dégeler
-grid.getColumnDefs()                   // définitions actuelles
-grid.setColumns(nouvellesDefs)         // remplacer toutes les colonnes
-grid.toggleColPanel()                  // ouvrir/fermer le panneau colonnes
+grid.showColumn("champ");
+grid.hideColumn("champ");
+grid.setColumnWidth("champ", 150);
+grid.setColumnPinned("champ", "left"); // geler à gauche
+grid.setColumnPinned("champ", false); // dégeler
+grid.getColumnDefs();
+grid.setColumns(nouvellesDefs);
+grid.toggleColPanel();
 ```
 
 ### Groupement
 
 ```js
-grid.setGroupBy('ccy')
-grid.clearGroupBy()
-grid.toggleGrouping()      // (bouton toolbar)
+grid.setGroupBy("ccy");
+grid.clearGroupBy();
+grid.toggleGrouping();
 ```
 
 ### Statistiques
 
 ```js
-// Totaux sur les colonnes aggFunc:'sum'
-grid.getTotals()
-// → { solde: { sum, avg, min, max, count }, debit: {...} }
-
-// Sur des champs spécifiques
-grid.getTotals(['debit', 'credit'])
-
-// Somme d'un seul champ
-grid.getTotal('solde')    // nombre
+grid.getTotals(); // { solde: { sum, avg, min, max, count }, ... }
+grid.getTotals(["debit", "credit"]); // champs spécifiques
+grid.getTotal("solde"); // somme directement
 ```
 
 ### Export
 
 ```js
-grid.exportCSV()                     // toutes les lignes filtrées
-grid.exportCSV('mon-fichier')        // nom de fichier personnalisé
-grid.exportCSV(null, true)           // sélection seulement
-grid.exportJSON()
-grid.exportJSON('mon-fichier')
-grid.copySelected()                  // copie TSV dans le presse-papier
+grid.exportCSV(); // toutes les lignes filtrées
+grid.exportCSV("mon-fichier"); // nom personnalisé
+grid.exportCSV(null, true); // sélection seulement
+grid.exportJSON();
+grid.exportJSON("mon-fichier");
+grid.copySelected(); // TSV dans le presse-papier
 ```
 
 ### Vues
 
 ```js
-grid.saveView('Nom de la vue')
-grid.loadView('Nom de la vue')
-grid.getViews()                      // ['Vue 1', 'Vue 2', ...]
-grid.openViewsModal()                // ouvrir la modal
+grid.saveView("Nom");
+grid.loadView("Nom");
+grid.getViews();
+grid.openViewsModal();
 ```
 
-### Édition en masse
+### Édition en masse & comparaison
 
 ```js
-grid.bulkEdit('statut', 'Validé')           // sur les lignes sélectionnées
-grid.bulkEdit('statut', 'Archivé', false)   // sur toutes les lignes
-```
-
-### Comparaison
-
-```js
-grid.compareRows()    // ouvre la modal (nécessite 2+ lignes sélectionnées)
+grid.bulkEdit("statut", "Validé"); // lignes sélectionnées
+grid.bulkEdit("statut", "Archivé", false); // toutes les lignes
+grid.compareRows(); // nécessite 2+ lignes sélectionnées
 ```
 
 ### Graphiques
 
 ```js
-grid.openChart()      // ouvrir la modal graphiques
-grid.closeChart()
+grid.openChart();
+grid.closeChart();
+
+// Avec config prédéfinie
+grid._chartConfig = {
+  xField: "entity",
+  yFields: ["debit", "credit"],
+  chartType: "bar",
+};
+grid.openChart();
 ```
 
-### Layout
+### Layout, thème, loader
 
 ```js
-grid.setLayout('fitDataFill')
-grid.setLayout('fitColumns')
-grid.setLayout('fitData')
-grid.setLayout('fitDataStretch')
-```
-
-### Formatage conditionnel
-
-```js
-grid.toggleCF()       // activer/désactiver (bouton toolbar)
-// Activé sur les colonnes avec cf: true
-// Vert (#d4edda) si valeur > 100 000
-// Orange (#fff3cd) si valeur entre 0 et 100 000
-// Rouge (#fde8e7) si valeur < 0
-```
-
-### Thèmes
-
-```js
-grid.setTheme('dark')         // thème sombre
-grid.setTheme('compact')      // lignes plus petites
-grid.setTheme('spreadsheet')  // en-tête vert (style Excel)
-// Revenir au défaut : recharger la page ou réinstancier
-```
-
-Les thèmes modifient les variables CSS `--ng-*` sur le conteneur.
-
-### Loader (chargement données)
-
-```js
-grid.showLoader('Connexion API…')  // overlay de chargement
-grid.hideLoader()
+grid.setLayout("fitDataFill");
+grid.setLayout("fitColumns");
+grid.setLayout("fitData");
+grid.setLayout("fitDataStretch");
+grid.setTheme("dark");
+grid.setTheme("compact");
+grid.setTheme("spreadsheet");
+grid.showLoader("Connexion API…");
+grid.hideLoader();
 ```
 
 ### Pagination
 
 ```js
-grid.setTotalCount(1000)                           // total serveur
-grid.setLoadMoreMessage('500 / 1000 chargées')     // message pagination
-grid.unlockLoadMore()                              // débloquer le scroll
+grid.setTotalCount(1000);
+grid.setLoadMoreMessage("500 / 1000 lignes chargées");
+grid.unlockLoadMore();
 ```
 
 ### Divers
 
 ```js
-grid.refresh()     // re-render complet
-grid.clearAll()    // réinitialiser filtres, tris, sélections, pins
-grid.destroy()     // détruire la grille et nettoyer le DOM
+grid.refresh(); // re-render complet
+grid.clearAll(); // réinitialiser filtres, tris, sélections, pins, recherche
+grid.destroy(); // détruire la grille et nettoyer le DOM
 ```
 
 ---
@@ -939,66 +1181,64 @@ grid.destroy()     // détruire la grille et nettoyer le DOM
 ## Événements
 
 ```js
-const grid = new NexaGrid('#myGrid', {
-
+const grid = new NexaGrid("#myGrid", {
   onRowClick: ({ row, event }) => {
-    // Déclenché au clic sur une ligne
-    console.log(row.ref);
+    console.log("Clic sur :", row.ref);
   },
 
   onRowDblClick: ({ row, event }) => {
-    // Déclenché au double-clic (ouvre aussi le panel de détail)
+    // Ouvre aussi automatiquement le panel de détail
   },
 
   onCellClick: ({ row, field, value, event }) => {
-    // Déclenché au clic sur une cellule
+    console.log(`${field} = ${value}`);
   },
 
   onCellValueChanged: ({ row, field, oldValue, newValue }) => {
-    // Déclenché après chaque modification de cellule
-    // (édition inline, bulk edit, paste depuis Excel, setCellValue)
-    fetch('/api/save', {
-      method: 'POST',
-      body: JSON.stringify({ id: row.id, field, value: newValue })
+    // Déclenché après : édition inline, bulk edit, paste Excel, setCellValue
+    fetch("/api/save", {
+      method: "POST",
+      body: JSON.stringify({ id: row.id, field, value: newValue }),
     });
   },
 
   onSelectionChanged: (selectedRows) => {
-    // Déclenché à chaque changement de sélection
-    console.log(selectedRows.length, 'lignes sélectionnées');
+    console.log(selectedRows.length, "lignes sélectionnées");
   },
 
-  onFilterChanged: (filters) => {
-    // Déclenché à chaque changement de filtre
-    console.log(Object.keys(filters).length, 'filtres actifs');
+  onFilterChanged: (filters, grid) => {
+    // filters = { champ: { type, value, ... }, ... }
+    // grid    = instance NexaGrid (utile pour serverSideFilter)
+    console.log(Object.keys(filters).length, "filtres actifs");
   },
 
   onSortChanged: (sorts) => {
-    // Déclenché à chaque changement de tri
-    // sorts = [{ field:'solde', dir:'desc' }, ...]
+    // sorts = [{ field:'solde', dir:'desc' }, { field:'date', dir:'asc' }]
   },
 
   onRowMoved: ({ row, fromIndex, toIndex }) => {
-    // Déclenché après un drag & drop de ligne
+    console.log(`Ligne ${row.ref} : ${fromIndex} → ${toIndex}`);
   },
 
   onRowPinned: ({ row, pinned }) => {
-    // Déclenché quand une ligne est épinglée/détachée
+    console.log(`Ligne ${row.ref} ${pinned ? "épinglée" : "libérée"}`);
   },
 
   onDataLoaded: (rows) => {
-    // Déclenché après chaque setData()
-    console.log(rows.length, 'lignes chargées');
+    console.log(rows.length, "lignes chargées");
   },
 
   onLoadMore: (info, grid) => {
-    // Déclenché quand le scroll atteint le bas (infinite scroll)
     // info.loadedCount, info.totalCount, info.page
   },
 
+  onPageSizeChanged: (pageSize, grid) => {
+    // Sauvegarder la préférence utilisateur
+    localStorage.setItem("gridPageSize", pageSize);
+  },
+
   onReady: (grid) => {
-    // Déclenché une fois la grille initialisée et le loader terminé
-    console.log('Grille prête');
+    console.log("NexaGrid prêt");
   },
 });
 ```
@@ -1007,39 +1247,49 @@ const grid = new NexaGrid('#myGrid', {
 
 ## Thèmes
 
-NexaGrid utilise des variables CSS `--ng-*` pour les couleurs. Vous pouvez les surcharger dans votre propre CSS :
+```js
+grid.setTheme("dark"); // thème sombre
+grid.setTheme("compact"); // lignes plus petites
+grid.setTheme("spreadsheet"); // en-tête vert style Excel
+```
+
+Les thèmes modifient les variables CSS `--ng-*` sur le conteneur.
+
+**Surcharger dans votre CSS :**
 
 ```css
-/* Dans votre feuille de style */
 #myGrid {
-  --ng-accent:      #e74c3c;   /* couleur principale */
-  --ng-header-bg:   #2c3e50;   /* fond des en-têtes */
-  --ng-toolbar-bg:  #2c3e50;   /* fond de la toolbar */
-  --ng-row-h:       30px;      /* hauteur des lignes */
-  --ng-header-h:    34px;      /* hauteur des en-têtes */
+  --ng-accent: #e74c3c; /* couleur principale */
+  --ng-header-bg: #2c3e50; /* fond des en-têtes */
+  --ng-toolbar-bg: #2c3e50; /* fond de la toolbar */
+  --ng-row-h: 30px; /* hauteur des lignes */
+  --ng-header-h: 34px; /* hauteur des en-têtes */
 }
 ```
 
 ### Variables disponibles
 
-| Variable | Défaut | Description |
-|----------|--------|-------------|
-| `--ng-accent` | `#1e6dc5` | Couleur principale |
-| `--ng-header-bg` | `#1c2e4a` | Fond en-tête groupe |
-| `--ng-header-bg2` | `#243a5e` | Fond en-tête colonnes |
-| `--ng-header-text` | `#e8edf5` | Texte en-tête |
-| `--ng-toolbar-bg` | `#2a3f5f` | Fond toolbar |
-| `--ng-row-even` | `#ffffff` | Fond lignes paires |
-| `--ng-row-odd` | `#f7f8fa` | Fond lignes impaires |
-| `--ng-row-hover` | `#deeaf7` | Fond ligne au survol |
-| `--ng-row-selected` | `#ccdff5` | Fond ligne sélectionnée |
-| `--ng-positive` | `#1a6e3d` | Couleur valeurs positives |
-| `--ng-negative` | `#c0392b` | Couleur valeurs négatives |
-| `--ng-font` | `'Segoe UI','Calibri'` | Police |
-| `--ng-font-mono` | `'Consolas'` | Police monospace |
-| `--ng-row-h` | `26px` | Hauteur des lignes |
-| `--ng-header-h` | `30px` | Hauteur des en-têtes |
-| `--ng-filter-h` | `32px` | Hauteur de la ligne filtres |
+| Variable            | Défaut                     | Description                                      |
+| ------------------- | -------------------------- | ------------------------------------------------ |
+| `--ng-accent`       | `#1e6dc5`                  | Couleur principale (boutons, sélection, accents) |
+| `--ng-header-bg`    | `#1c2e4a`                  | Fond en-tête groupes                             |
+| `--ng-header-bg2`   | `#243a5e`                  | Fond en-tête colonnes                            |
+| `--ng-header-text`  | `#e8edf5`                  | Texte des en-têtes                               |
+| `--ng-toolbar-bg`   | `#2a3f5f`                  | Fond de la toolbar                               |
+| `--ng-row-even`     | `#ffffff`                  | Fond lignes paires                               |
+| `--ng-row-odd`      | `#f7f8fa`                  | Fond lignes impaires                             |
+| `--ng-row-hover`    | `#deeaf7`                  | Fond ligne au survol                             |
+| `--ng-row-selected` | `#ccdff5`                  | Fond ligne sélectionnée                          |
+| `--ng-row-pinned`   | `#fffbee`                  | Fond ligne épinglée                              |
+| `--ng-positive`     | `#1a6e3d`                  | Couleur valeurs positives                        |
+| `--ng-negative`     | `#c0392b`                  | Couleur valeurs négatives                        |
+| `--ng-warning`      | `#b35c00`                  | Couleur avertissements                           |
+| `--ng-border`       | `#d0d5de`                  | Couleur bordures                                 |
+| `--ng-font`         | `'Segoe UI','Calibri'`     | Police principale                                |
+| `--ng-font-mono`    | `'Consolas','Courier New'` | Police monospace (nombres)                       |
+| `--ng-row-h`        | `26px`                     | Hauteur des lignes                               |
+| `--ng-header-h`     | `30px`                     | Hauteur des en-têtes                             |
+| `--ng-filter-h`     | `32px`                     | Hauteur de la ligne filtres                      |
 
 ---
 
@@ -1051,21 +1301,50 @@ NexaGrid remplit son conteneur. C'est **votre CSS** qui contrôle la taille.
 <!-- Option 1 : hauteur fixe -->
 <div id="myGrid" style="height: 500px; width: 100%"></div>
 
-<!-- Option 2 : flex (recommandé dans un layout) -->
+<!-- Option 2 : flex dans un layout (recommandé) -->
 <div style="display:flex; flex-direction:column; height:100vh">
-  <header style="height:52px">…</header>
-  <div id="myGrid" style="flex:1; min-height:0"></div>
+  <header style="height:52px">Barre de navigation</header>
+  <main style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
+    <div id="myGrid" style="flex:1; min-height:0"></div>
+  </main>
 </div>
 
-<!-- Option 3 : via les options -->
+<!-- Option 3 : forcer via les options -->
 <div id="myGrid"></div>
 <script>
-  new NexaGrid('#myGrid', { height: '600px', ... });
+  new NexaGrid('#myGrid', { height: '600px', columns:[...], data:[...] });
 </script>
 ```
 
-> `min-height: 0` est essentiel quand vous utilisez `flex: 1` pour éviter le débordement.
+> `min-height: 0` est **essentiel** quand vous utilisez `flex: 1` pour éviter le débordement.
+
+### Architecture dual-panel
+
+NexaGrid utilise deux panneaux internes pour les colonnes gelées :
+
+```
+┌────────────────────────────────────────────────────────────────────┐
+│ Toolbar                                                             │
+├──────────────────────┬─────────────────────────────────────────────┤
+│ PANNEAU GAUCHE       │ PANNEAU DROIT                                │
+│ (colonnes frozen)    │ (colonnes normales)                          │
+│                      │                                              │
+│ scroll horizontal ✓  │ scroll horizontal ✓                          │
+│ scroll vertical ✗    │ scroll vertical ✓                            │
+│ (synced via JS)      │                                              │
+│                      │                                              │
+│ ←──scrollbar──→      │ ←────────scrollbar────────→                  │
+├──────────────────────┴─────────────────────────────────────────────┤
+│ Status bar                                                          │
+├────────────────────────────────────────────────────────────────────┤
+│ Pagination              [25▾]  « ‹  Page 1/40  › »   1–25/1 000   │
+└────────────────────────────────────────────────────────────────────┘
+```
+
+- Le **panneau gauche** (colonnes `frozen:true`) a une scrollbar horizontale toujours visible de la même hauteur que le panneau droit — garantissant l'alignement des lignes.
+- Le scroll vertical du panneau gauche est synchronisé **silencieusement** avec le panneau droit via JS (`scrollTop`).
+- Le **panneau droit** gère son propre scroll horizontal + vertical indépendamment.
 
 ---
 
-*NexaGrid v2.2 — MIT License*
+_NexaGrid v1.0 — MIT License_
